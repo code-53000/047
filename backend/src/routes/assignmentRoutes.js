@@ -31,6 +31,9 @@ router.get('/pending', authMiddleware, roleMiddleware('admin', 'department'), as
     if (req.user.role === 'department') {
       sql += ' AND p.department_id = ?';
       params.push(req.user.departmentId);
+    } else if (req.query.departmentId) {
+      sql += ' AND p.department_id = ?';
+      params.push(Number(req.query.departmentId));
     }
     sql += ' ORDER BY a.created_at ASC';
     const [rows] = await pool.query(sql, params);

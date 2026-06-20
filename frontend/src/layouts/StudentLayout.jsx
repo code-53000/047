@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { Routes, Route, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import StudentPositionsPage from '../pages/student/PositionsPage.jsx';
 import StudentApplicationsPage from '../pages/student/ApplicationsPage.jsx';
