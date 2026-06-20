@@ -40,6 +40,11 @@ export default function StudentWorkHoursPage() {
     if (!form.applicationId || !form.workDate || !form.hours) {
       alert('请填写必填项'); return;
     }
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (new Date(form.workDate) > today) {
+      alert('不能申报未来日期的工时'); return;
+    }
     try {
       await api.post('/work-hours', form);
       alert('提交成功，等待部门审核');
@@ -224,7 +229,7 @@ export default function StudentWorkHoursPage() {
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">工作日期 *</label>
-                  <input type="date" className="form-input" value={form.workDate} onChange={e => setForm({...form, workDate: e.target.value})} />
+                  <input type="date" className="form-input" value={form.workDate} max={new Date().toISOString().substring(0,10)} onChange={e => setForm({...form, workDate: e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">工时(小时) *</label>

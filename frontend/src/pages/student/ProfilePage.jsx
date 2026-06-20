@@ -34,7 +34,7 @@ export default function StudentProfilePage() {
     if (passwordForm.new1.length < 6) { alert('新密码至少6位'); return; }
     try {
       setChangingPwd(true);
-      await api.put(`/users/${user.id}`, { password: passwordForm.new1 });
+      await api.put(`/users/${user.id}/password`, { oldPassword: passwordForm.old, newPassword: passwordForm.new1 });
       alert('密码修改成功');
       setPasswordForm({ old: '', new1: '', new2: '' });
     } catch (e) { alert(e.message); }

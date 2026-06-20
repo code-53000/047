@@ -14,6 +14,16 @@ router.post('/', authMiddleware, roleMiddleware('student'), async (req, res, nex
       return res.status(400).json({ error: '工时必须在0-24之间' });
     }
 
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const workDateObj = new Date(workDate);
+    if (isNaN(workDateObj.getTime())) {
+      return res.status(400).json({ error: '工作日期格式不正确' });
+    }
+    if (workDateObj > today) {
+      return res.status(400).json({ error: '不能申报未来日期的工时' });
+    }
+
     const [apps] = await pool.query(
       'SELECT * FROM applications WHERE id = ? AND student_id = ? AND status = ?',
       [applicationId, req.user.id, 'assigned']

@@ -24,11 +24,12 @@ export default function AdminProfile() {
   }
 
   async function handleChgPwd() {
-    if (!pwd.new1 || pwd.new1 !== pwd.new2) { alert('密码不一致'); return; }
+    if (!pwd.old || !pwd.new1) { alert('请填写原密码和新密码'); return; }
+    if (pwd.new1 !== pwd.new2) { alert('密码不一致'); return; }
     if (pwd.new1.length < 6) { alert('密码至少6位'); return; }
     try {
       setChgPwd(true);
-      await api.put(`/users/${user.id}`, { password: pwd.new1 });
+      await api.put(`/users/${user.id}/password`, { oldPassword: pwd.old, newPassword: pwd.new1 });
       alert('修改成功'); setPwd({old:'',new1:'',new2:''});
     } catch(e){ alert(e.message); }
     finally { setChgPwd(false); }

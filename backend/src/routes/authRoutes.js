@@ -46,11 +46,14 @@ router.post('/login', async (req, res, next) => {
 router.post('/register/student', async (req, res, next) => {
   try {
     const { username, password, realName, studentNo, className, phone, email } = req.body;
-    if (!username || !password || !realName || !studentNo) {
+    if (!username || !username.trim() || !password || !realName || !realName.trim() || !studentNo || !studentNo.trim()) {
       return res.status(400).json({ error: '请填写必填项' });
     }
 
-    const [existing] = await pool.query('SELECT id FROM users WHERE username = ? OR student_no = ?', [username, studentNo]);
+    const trimmedStudentNo = studentNo.trim();
+    const trimmedUsername = username.trim();
+
+    const [existing] = await pool.query('SELECT id FROM users WHERE username = ? OR student_no = ?', [trimmedUsername, trimmedStudentNo]);
     if (existing.length > 0) {
       return res.status(400).json({ error: '用户名或学号已存在' });
     }
@@ -58,7 +61,7 @@ router.post('/register/student', async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
       'INSERT INTO users (username, password, real_name, role, student_no, class, phone, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [username, hashedPassword, realName, 'student', studentNo, className, phone, email]
+      [trimmedUsername, hashedPassword, realName.trim(), 'student', trimmedStudentNo, className, phone, email]
     );
 
     res.status(201).json({

@@ -11,6 +11,7 @@ const STATUS_MAP = {
 export default function AdminAssignments() {
   const [tab, setTab] = useState('pending');
   const [applications, setApplications] = useState([]);
+  const [allCounts, setAllCounts] = useState({ pending: 0, approved: 0, assigned: 0, rejected: 0 });
   const [deptFilter, setDeptFilter] = useState('');
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,20 +19,35 @@ export default function AdminAssignments() {
   const [comment, setComment] = useState('');
   const [acting, setActing] = useState('');
 
-  useEffect(() => { loadData(); }, [tab]);
+  useEffect(() => { loadData(); }, [tab, deptFilter]);
 
   async function loadData() {
     try {
       setLoading(true);
-      const [deps] = await Promise.all([api.get('/departments')]);
+      const depsPromise = api.get('/departments');
+
+      const deptParam = deptFilter ? `?departmentId=${deptFilter}` : '';
+      const pendingPromise = api.get('/assignments/pending' + deptParam).catch(() => []);
+      const allPromise = api.get('/applications' + deptParam).catch(() => []);
+
+      const [deps, pendingData, allData] = await Promise.all([depsPromise, pendingPromise, allPromise]);
       setDepartments(deps);
-      const endpoint = tab === 'pending' ? '/assignments/pending' : '/applications';
-      const data = await api.get(endpoint + (deptFilter ? `?departmentId=${deptFilter}` : ''));
-      setApplications(tab === 'pending' ? data : data.filter(a => a.status === tab));
+
+      const counts = {
+        pending: Array.isArray(pendingData) ? pendingData.length : 0,
+        approved: allData.filter(a => a.status === 'approved').length,
+        assigned: allData.filter(a => a.status === 'assigned').length,
+        rejected: allData.filter(a => a.status === 'rejected').length
+      };
+      setAllCounts(counts);
+
+      if (tab === 'pending') {
+        setApplications(pendingData || []);
+      } else {
+        setApplications(allData.filter(a => a.status === tab));
+      }
     } finally { setLoading(false); }
   }
-
-  useEffect(() => { loadData(); }, [tab, deptFilter]);
 
   async function doApprove() {
     if (!detail) return;
@@ -86,10 +102,10 @@ export default function AdminAssignments() {
       </div>
 
       <div className="stat-cards">
-        <div className="stat-card warning"><div className="stat-label">待审核</div><div className="stat-value">{(tab==='pending'?applications:[]).length || <span style={{fontSize:'18px'}}>切换标签查看</span>}</div></div>
-        <div className="stat-card success"><div className="stat-label">已通过（待分配）</div><div className="stat-value">{(tab==='approved'?applications:[]).length || <span style={{fontSize:'18px'}}>切换标签查看</span>}</div></div>
-        <div className="stat-card"><div className="stat-label">已分配（在岗）</div><div className="stat-value">{(tab==='assigned'?applications:[]).length || <span style={{fontSize:'18px'}}>切换标签查看</span>}</div></div>
-        <div className="stat-card danger"><div className="stat-label">已拒绝</div><div className="stat-value">{(tab==='rejected'?applications:[]).length || <span style={{fontSize:'18px'}}>切换标签查看</span>}</div></div>
+        <div className="stat-card warning"><div className="stat-label">待审核</div><div className="stat-value">{allCounts.pending} <span style={{fontSize:'14px', fontWeight:'normal'}}>条</span></div></div>
+        <div className="stat-card success"><div className="stat-label">已通过（待分配）</div><div className="stat-value">{allCounts.approved} <span style={{fontSize:'14px', fontWeight:'normal'}}>条</span></div></div>
+        <div className="stat-card"><div className="stat-label">已分配（在岗）</div><div className="stat-value">{allCounts.assigned} <span style={{fontSize:'14px', fontWeight:'normal'}}>条</span></div></div>
+        <div className="stat-card danger"><div className="stat-label">已拒绝</div><div className="stat-value">{allCounts.rejected} <span style={{fontSize:'14px', fontWeight:'normal'}}>条</span></div></div>
       </div>
 
       <div className="tabs">

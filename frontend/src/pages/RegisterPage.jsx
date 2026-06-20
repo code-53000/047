@@ -14,7 +14,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.username || !form.password || !form.realName || !form.studentNo) {
+    if (!form.username?.trim() || !form.password || !form.realName?.trim() || !form.studentNo?.trim()) {
       setError('请填写必填项');
       return;
     }

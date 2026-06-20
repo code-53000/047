@@ -69,6 +69,39 @@ router.post('/', authMiddleware, roleMiddleware('admin'), async (req, res, next)
   }
 });
 
+router.put('/:id/password', authMiddleware, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (String(req.user.id) !== String(id)) {
+      return res.status(403).json({ error: '无权限修改' });
+    }
+
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: '请填写原密码和新密码' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: '新密码至少6位' });
+    }
+
+    const [existing] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+
+    const isValid = await bcrypt.compare(oldPassword, existing[0].password);
+    if (!isValid) {
+      return res.status(400).json({ error: '原密码错误' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, id]);
+    res.json({ message: '密码修改成功' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.put('/:id', authMiddleware, async (req, res, next) => {
   try {
     const { id } = req.params;
